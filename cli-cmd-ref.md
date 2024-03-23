@@ -25,7 +25,7 @@
 
 
 **Brainstorm**
-banj retune
+banj tune
 banj listen
 banj publish "message"
 banj update

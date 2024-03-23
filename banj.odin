@@ -4,24 +4,46 @@ import "core:fmt"
 import "core:c/libc"
 import "core:os"
 import "core:strings"
+import "tune"
 
 main :: proc() {
   args := process_args()
+  _, ok := args.(bool)
+  // If the result really is false
+  if ok {
+    help_message()
+    return
+  }
+  args_vec := args.([dynamic]string)
+  switch args_vec[0] {
+    case "tune":
+      tune.tune()
+    case: 
+      help_message()
+  }
   fmt.println("done parsing args!")
   flags := process_flags()
   fmt.println("done parsing flags!")
   libc.system("echo 'fuck yes'")
 }
 
-process_args :: proc() -> [dynamic]string {
+help_message :: proc() {
+  fmt.println("TODO - help the user")
+}
+
+process_args :: proc() -> union #no_nil {bool, [dynamic]string} {
   args: [dynamic]string
+  has_args := false
   for i := 0; i < len(os.args); i +=1{
     arg := get_arg(os.args[i])
     if arg != false {
+      has_args = true
       fmt.println(arg.(string))
       append(&args, arg.(string))
     }
   }
+  // Either tell the user we didn't get any args, or return them
+  if !has_args do return false
   return args
 }
 
