@@ -17,7 +17,9 @@ main :: proc() {
   args_vec := args.([dynamic]string)
   switch args_vec[0] {
     case "tune":
-      tune.tune()
+      // send args to tune
+      ordered_remove(&args_vec, 0)
+      tune.tune(args_vec)
     case: 
       help_message()
   }
