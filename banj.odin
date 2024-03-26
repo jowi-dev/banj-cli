@@ -1,10 +1,13 @@
 package banj
 
+// Odin Core
 import "core:fmt"
 import "core:c/libc"
 import "core:os"
 import "core:strings"
-import "tune"
+
+// Project Namespaces
+import "core"
 import "help"
 
 Error :: enum {
@@ -25,11 +28,12 @@ main :: proc() {
   }
 
   switch args[0] {
-    case "tune":
-      // send args to tune
-      //ordered_remove(&args, 0)
-      tune.tune(args)
-      return
+    case "tune", "rebuild":
+      core.rebuild()
+
+    case "sleep":
+      core.sleep()
+
     case: 
       help.print("help.md")
   }

@@ -1,10 +1,10 @@
-package tune
+package core
 
 import "core:fmt"
 import "core:c/libc"
 
 
-tune :: proc(args: [dynamic]string) -> (success: bool) {
+rebuild :: proc() -> (success: bool) {
   cmd :cstring
   #partial switch ODIN_OS {
     case .Linux: 
@@ -19,8 +19,22 @@ tune :: proc(args: [dynamic]string) -> (success: bool) {
       return false
   }
 
-  result : int = auto_cast libc.system(cmd)
-  return result == 0
+  return run_cmd(cmd)
 }
 
+sleep :: proc() -> (success:bool){
+  cmd: cstring
+ #partial switch ODIN_OS {
+  case .Linux:
+    cmd = "systemctl hibernate"
+  case: 
+    fmt.println("Command not supported on current system")
+    return false
+ }
+ return run_cmd(cmd)
+}
 
+@(private)
+run_cmd :: proc(cmd: cstring) -> (success: bool) {
+  return libc.system(cmd) == 0
+}
