@@ -20,11 +20,16 @@ main :: proc() {
     return
   }
 
+  for i:=0; i < len(args); i+=1{
+    fmt.println(args[i])
+  }
+
   switch args[0] {
     case "tune":
       // send args to tune
-      ordered_remove(&args, 0)
+      //ordered_remove(&args, 0)
       tune.tune(args)
+      return
     case: 
       help.print("help.md")
   }
@@ -35,7 +40,7 @@ process_args :: proc() -> (args: [dynamic]string, error: Error) {
   error = Error.Invalid_Format
   for i := 0; i < len(os.args); i +=1{
     arg, ok := get_arg(os.args[i])
-    if !ok {
+    if ok {
       error = nil
       append(&args, arg)
     }
