@@ -5,78 +5,49 @@ import "core:c/libc"
 import "core:os"
 import "core:strings"
 import "tune"
+import "help"
+
+Error :: enum {
+  Invalid_Format, 
+  Unknown
+}
 
 main :: proc() {
-  args := process_args()
-  _, ok := args.(bool)
+  args, error := process_args()
   // If the result really is false
-  if ok {
-    help_message()
+  if error != nil {
+    help.print("help.md")
     return
   }
-  args_vec := args.([dynamic]string)
-  switch args_vec[0] {
+
+  switch args[0] {
     case "tune":
       // send args to tune
-      ordered_remove(&args_vec, 0)
-      tune.tune(args_vec)
+      ordered_remove(&args, 0)
+      tune.tune(args)
     case: 
-      help_message()
+      help.print("help.md")
   }
-  fmt.println("done parsing args!")
-  flags := process_flags()
-  fmt.println("done parsing flags!")
-  libc.system("echo 'fuck yes'")
+  fmt.println("Done")
 }
 
-help_message :: proc() {
-  fmt.println("TODO - help the user")
-}
-
-process_args :: proc() -> union #no_nil {bool, [dynamic]string} {
-  args: [dynamic]string
-  has_args := false
+process_args :: proc() -> (args: [dynamic]string, error: Error) {
+  error = Error.Invalid_Format
   for i := 0; i < len(os.args); i +=1{
-    arg := get_arg(os.args[i])
-    if arg != false {
-      has_args = true
-      fmt.println(arg.(string))
-      append(&args, arg.(string))
+    arg, ok := get_arg(os.args[i])
+    if !ok {
+      error = nil
+      append(&args, arg)
     }
   }
   // Either tell the user we didn't get any args, or return them
-  if !has_args do return false
-  return args
+  return args, error
 }
 
-// I currently have no use for flags, but this
-// was an easy way to get started
-process_flags :: proc() -> [dynamic]string{
-  flags: [dynamic]string
-  for i := 0; i < len(os.args); i += 1{
-    flag := get_flag(os.args[i])
-    if flag != false {
-      //Get the flag as a string
-      flag_name:string = flag.(string)
-      append(&flags, flag_name)
-      fmt.println(flag)
-    }
-  }
-  return flags
-}
+get_arg :: proc(arg: string) -> (found_arg: string = "", ok: bool = false) {
+  // Naked returns will send the default found ^
+  if strings.has_prefix(arg, "--") do return
+  if strings.contains(arg, "/") do return
 
-// Args are described as any alphanumeric input following the base command
-// itself
-get_arg :: proc(arg: string) -> union{string, bool} {
-  if strings.has_prefix(arg, "--") do return false
-  if strings.contains(arg, "/") do return false
-
-  return arg
-}
-
-get_flag :: proc(arg: string) -> union{string, bool} {
-  head, match, tail := strings.partition(arg, "--")
-
-  if match == "--" && head == "" do return tail
-  return false
+  return arg, true
 }
