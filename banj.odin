@@ -6,41 +6,42 @@ import "core:c/libc"
 import "core:os"
 import "core:strings"
 
-// Project Namespaces
-import "core"
-import "help"
+import "./help"
+import "./banj_os"
 
 Error :: enum {
   Invalid_Format, 
+  Invalid_Args,
   Unknown
 }
 
+
 main :: proc() {
   args, error := process_args()
+  if len(os.args) == 1 do return
   // If the result really is false
   if error != nil {
     help.print("help.md")
     return
   }
 
-  for i:=0; i < len(args); i+=1{
-    fmt.println(args[i])
-  }
-
+  cmd:cstring
   switch args[0] {
     case "tune", "rebuild":
-      core.rebuild()
-
+      cmd = banj_os.rebuild(auto_cast ODIN_OS) or_else banj_os.help()
     case "sleep":
-      core.sleep()
-
+      cmd = banj_os.sleep(auto_cast ODIN_OS) or_else banj_os.help()
     case: 
       help.print("help.md")
+      return 
   }
-  fmt.println("Done")
+  libc.system(cmd)
+  return 
 }
 
 process_args :: proc() -> (args: [dynamic]string, error: Error) {
+  if len(os.args) <= 1 do return args, Error.Invalid_Args
+
   error = Error.Invalid_Format
   for i := 0; i < len(os.args); i +=1{
     arg, ok := get_arg(os.args[i])
