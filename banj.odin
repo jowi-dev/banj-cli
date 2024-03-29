@@ -29,15 +29,20 @@ main :: proc() {
   else {
     switch args[0] {
       case "tune", "rebuild":
-        cmd = rebuild(auto_cast ODIN_OS) or_else help(.Rebuild)
+        cmd = rebuild(cast_os()) or_else help(.Rebuild)
       case "sleep":
-        cmd = sleep(auto_cast ODIN_OS) or_else help(.Sleep)
+        cmd = sleep(cast_os()) or_else help(.Sleep)
       case: 
         cmd = help(.Banj)
     }
   }
   libc.system(cmd)
   return 
+}
+
+cast_os :: proc() -> SupportedOS {
+  if ODIN_OS == .Darwin do return .Darwin
+  return .Linux
 }
 
 process_args :: proc() -> (args: [dynamic]string, error: Error) {

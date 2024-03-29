@@ -2,6 +2,7 @@ package banj
 
 import "core:fmt"
 import "core:c/libc"
+import "base:runtime"
 
 SupportedOS :: enum {
   Darwin, 
@@ -21,7 +22,9 @@ rebuild :: proc(os: SupportedOS) -> (cmd:cstring = "", ok:bool = true) {
   return
 }
 
+
 sleep :: proc(os: SupportedOS) -> (cmd:cstring = "", ok:bool = true){
+  fmt.println(ODIN_OS)
   #partial switch os {
     case .Linux:
       return "systemctl hibernate", true
