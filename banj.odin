@@ -6,34 +6,35 @@ import "core:c/libc"
 import "core:os"
 import "core:strings"
 
-import "./help"
-import "./banj_os"
-
 Error :: enum {
   Invalid_Format, 
   Invalid_Args,
   Unknown
 }
 
-
+/*
+* TODO 
+* - AI Commands - for sure new project
+* - Garbage collect both generations and derivations
+* - GC Home manager?
+* - Project CLI. Maybe seperate project
+* - Monitoring commands
+* - Display commands
+*/
 main :: proc() {
   args, error := process_args()
-  if len(os.args) == 1 do return
-  // If the result really is false
-  if error != nil {
-    help.print("help.md")
-    return
-  }
 
   cmd:cstring
-  switch args[0] {
-    case "tune", "rebuild":
-      cmd = banj_os.rebuild(auto_cast ODIN_OS) or_else banj_os.help()
-    case "sleep":
-      cmd = banj_os.sleep(auto_cast ODIN_OS) or_else banj_os.help()
-    case: 
-      help.print("help.md")
-      return 
+  if error != nil || len(os.args) == 1 do cmd = help(.Banj)
+  else {
+    switch args[0] {
+      case "tune", "rebuild":
+        cmd = rebuild(auto_cast ODIN_OS) or_else help(.Rebuild)
+      case "sleep":
+        cmd = sleep(auto_cast ODIN_OS) or_else help(.Sleep)
+      case: 
+        cmd = help(.Banj)
+    }
   }
   libc.system(cmd)
   return 
@@ -54,10 +55,9 @@ process_args :: proc() -> (args: [dynamic]string, error: Error) {
   return args, error
 }
 
-get_arg :: proc(arg: string) -> (found_arg: string = "", ok: bool = false) {
-  // Naked returns will send the default found ^
-  if strings.has_prefix(arg, "--") do return
-  if strings.contains(arg, "/") do return
+get_arg :: proc(arg: string) -> (result: string, ok: bool = true) {
+  if strings.has_prefix(arg, "--") do return "", !ok
+  if strings.contains(arg, "/") do return "", !ok
 
-  return arg, true
+  return arg, ok
 }
