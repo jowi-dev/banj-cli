@@ -1,0 +1,3 @@
+[submodule "vendor/odin-http"]
+	path = vendor/odin-http
+	url = git@github.com:laytan/odin-http.git
