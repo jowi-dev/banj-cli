@@ -8,17 +8,6 @@
       let pkgs = import nixpkgs { inherit system; }; 
       in with pkgs; {
         devShells.default = mkShell {
-          shellHook = ''
-            #abbr --add joe 'echo "hello joe"';
-            echo "TODO - add some build aliases and test commands -- THESE ARE BROKEN";
-            alias build='odin build . -debug';
-            alias test='odin test .';
-            alias debug='lldb ./banj-cli $1';
-            alias hello='echo "hello $1"';
-            export BANJ_CLI_DIR=.;
-
-            #exec $SHELL && exit;
-          '';
 #          LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${
 #              with pkgs;
 #              pkgs.lib.makeLibraryPath [
@@ -40,6 +29,10 @@
 
           buildInputs = [
             pkgs.odin
+            # Making requests
+            pkgs.openssl
+            # Saving AI responses
+            sqlite
             # TODO - I want to get this working
             # https://odin-lang.org/docs/install/#for-macos
 #            (odin.overrideAttrs (finalAttr: prevAttr: {

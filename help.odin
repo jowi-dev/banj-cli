@@ -7,7 +7,7 @@ Context :: enum {
   Banj,
   Rebuild,
   Sleep,
-  Code
+  AI
 }
 
 // Takes a context and prints a formatted help string
@@ -31,8 +31,8 @@ get_help :: proc(cont: Context) -> string {
       return "rebuild.md"
     case .Sleep:
       return "sleep.md"
-    case .Code: 
-      return "code.md"
+    case .AI: 
+      return "ai.md"
     case: 
       return "help.md"
   }

@@ -32,8 +32,8 @@ main :: proc() {
         cmd = rebuild(cast_os()) or_else help(.Rebuild)
       case "sleep":
         cmd = sleep(cast_os()) or_else help(.Sleep)
-      case "code":
-        cmd = ai_code(cast_os()) or_else help(.Code)
+      case "ai":
+        cmd = ai(cast_os()) or_else help(.AI)
 
       case: 
         cmd = help(.Banj)

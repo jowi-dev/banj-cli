@@ -1,3 +1,9 @@
 [submodule "vendor/odin-http"]
 	path = vendor/odin-http
 	url = git@github.com:laytan/odin-http.git
+[submodule "vendor/bindgen"]
+	path = vendor/bindgen
+	url = git@github.com:jowi-dev/odin-binding-generator.git
+[submodule "vendor/odin-sqlite3"]
+	path = vendor/odin-sqlite3
+	url = git@github.com:flysand7/odin-sqlite3.git
