@@ -33,6 +33,7 @@
             pkgs.openssl
             # Saving AI responses
             sqlite
+            valgrind
             # TODO - I want to get this working
             # https://odin-lang.org/docs/install/#for-macos
 #            (odin.overrideAttrs (finalAttr: prevAttr: {

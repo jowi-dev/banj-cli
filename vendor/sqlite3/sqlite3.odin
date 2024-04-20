@@ -4,11 +4,41 @@ package sqlite3
 import "core:c"
 import "core:c/libc"
 
+@(link_prefix="sqlite3_", default_calling_convention="c")
+foreign sqlite3 {
+    // One-step query execution interface.
+    exec :: proc (
+        conn: ^Sqlite3,
+        sql: cstring,
+        callback: proc "c" (rawptr, c.int, [^]cstring, [^]cstring) -> c.int,        
+        ctx: rawptr,
+        errmsg: ^cstring,
+    ) -> Status ---
+}
+
+//@(link_prefix="sqlite3_", default_calling_convention="c")
+//foreign sqlite3 {
+//    // One-step query execution interface.
+//    exec :: proc (
+//        conn: ^Sqlite3,
+//        sql: cstring,
+//        callback: proc "c" (
+//            ctx: rawptr,
+//            n_columns: i32,
+//            col_values: [^]cstring,
+//            col_names: [^]cstring,
+//        ) -> int,
+//        ctx: rawptr,
+//        errmsg: ^cstring,
+//    ) -> Status ---
+//}
 when ODIN_OS == .Windows {
     foreign import sqlite3 "bin/sqlite3.lib"
 } else when ODIN_OS ==.Linux {
+    //foreign import sqlite3 "system:sqlite3"
     foreign import sqlite3 {
-        "bin/sqlite3.a",
+ //#"bin/sqlite3.a",
+        "system:sqlite3",
         "system:pthread",
         "system:dl",
         "system:m",
@@ -420,22 +450,6 @@ foreign sqlite3 {
     close_v2 :: proc (conn: ^Sqlite3) -> Status ---
 }
 
-@(link_prefix="sqlite3_", default_calling_convention="c")
-foreign sqlite3 {
-    // One-step query execution interface.
-    exec :: proc (
-        conn: ^Sqlite3,
-        sql: cstring,
-        callback: proc "c" (
-            ctx: rawptr,
-            n_columns: i32,
-            col_values: [^]cstring,
-            col_names: [^]cstring,
-        ),
-        ctx: rawptr,
-        errmsg: ^cstring,
-    ) -> Status ---
-}
 
 @(link_prefix="sqlite3_", default_calling_convention="c")
 foreign sqlite3 {
@@ -603,9 +617,9 @@ foreign sqlite3 {
 @(link_prefix="sqlite3_", default_calling_convention="c")
 foreign sqlite3 {
     // Open a new connection to the database.
-    open ::          proc (filename: cstring, out_conn: ^Sqlite3) -> Status ---
+    open ::          proc (filename: cstring, out_conn: ^^Sqlite3) -> Status ---
     open16 ::        proc (filename: cstring, out_conn: ^^Sqlite3) -> Status ---
-    open_v2 ::       proc (filename: cstring, out_conn: ^^Sqlite3, flags: Open_Flags, zfs: cstring) -> Status ---
+    open_v2 ::       proc (filename: cstring, out_conn: ^^Sqlite3, flags: c.int, zfs: cstring) -> Status ---
     // Obtain values for URI parameters.
     uri_parameter :: proc (filename: cstring, param: cstring) -> cstring ---
     uri_boolean ::   proc (filename: cstring, param: cstring, default: b32) -> b32 ---

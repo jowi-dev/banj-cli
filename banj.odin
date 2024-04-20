@@ -23,8 +23,9 @@ Error :: enum {
 */
 main :: proc() {
   args, error := process_args()
+  defer delete(args)
 
-  cmd:cstring
+  cmd:cstring = ""
   if error != nil || len(os.args) == 1 do cmd = help(.Banj)
   else {
     switch args[0] {
@@ -34,12 +35,16 @@ main :: proc() {
         cmd = sleep(cast_os()) or_else help(.Sleep)
       case "ai":
         cmd = ai(cast_os()) or_else help(.AI)
-
+      case "dbg_ai":
+        // todo - this should be implemented as a flag
+        read_rows()
       case: 
         cmd = help(.Banj)
     }
   }
-  libc.system(cmd)
+  if cmd != "" {
+    libc.system(cmd)
+  }
   return 
 }
 
