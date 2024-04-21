@@ -6,6 +6,8 @@ import "core:c/libc"
 import "core:os"
 import "core:strings"
 
+import "vendor/sqlite3"
+
 Error :: enum {
   Invalid_Format, 
   Invalid_Args,
@@ -25,7 +27,7 @@ main :: proc() {
   args, error := process_args()
   defer delete(args)
 
-  cmd:cstring = ""
+  cmd:cstring = ``
   if error != nil || len(os.args) == 1 do cmd = help(.Banj)
   else {
     switch args[0] {
@@ -37,13 +39,15 @@ main :: proc() {
         cmd = ai(cast_os()) or_else help(.AI)
       case "dbg_ai":
         // todo - this should be implemented as a flag
-        read_rows()
+        sqlite3.read_rows(context.temp_allocator)
+        defer free_all(context.temp_allocator)
       case: 
         cmd = help(.Banj)
     }
   }
-  if cmd != "" {
-    libc.system(cmd)
+  if cmd != `` {
+    status := libc.system(cmd)
+    fmt.println(status)
   }
   return 
 }
@@ -64,6 +68,7 @@ process_args :: proc() -> (args: [dynamic]string, error: Error) {
       append(&args, arg)
     }
   }
+
   // Either tell the user we didn't get any args, or return them
   return args, error
 }
