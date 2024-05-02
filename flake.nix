@@ -33,6 +33,8 @@
             pkgs.openssl
             # Saving AI responses
             sqlite
+            # Making requests
+            curl
             valgrind
             # TODO - I want to get this working
             # https://odin-lang.org/docs/install/#for-macos

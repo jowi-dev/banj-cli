@@ -13,7 +13,8 @@ connect_db :: proc(allocator: mem.Allocator) -> (db : ^Sqlite3) {
   db = new(Sqlite3, allocator)
   
   flag : c.int = 2
-  db_file : cstring = strings.clone_to_cstring("dev.db")
+  db_file : cstring
+  db_file, _ = strings.clone_to_cstring("dev.db", allocator)
   status := open(db_file, &db)
   if status != nil {
     fmt.eprintf("failed to open")
@@ -76,6 +77,7 @@ create_record :: proc(db: ^Sqlite3) {
   ptr : rawptr  
   err : ^cstring 
   statement := strings.clone_to_cstring("INSERT INTO odin_logs (user, message) VALUES ('guy', 'this is real');")
+  defer delete(statement)
   status := exec(db, statement, nil, ptr, err)
 
   if status != nil {

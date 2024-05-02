@@ -30,7 +30,6 @@ foreign sqlite3 {
         errmsg: ^cstring,
     ) -> Status ---
 
-    @(private)
     close :: proc (conn: ^Sqlite3) -> Status ---
 
     @(private)

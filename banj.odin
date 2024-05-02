@@ -36,7 +36,7 @@ main :: proc() {
       case "sleep":
         cmd = sleep(cast_os()) or_else help(.Sleep)
       case "ai":
-        cmd = ai(cast_os()) or_else help(.AI)
+        cmd = ai(cast_os(), &args[1]) or_else help(.AI)
       case "dbg_ai":
         // todo - this should be implemented as a flag
         sqlite3.read_rows(context.temp_allocator)
