@@ -23,6 +23,43 @@ Post_Body :: struct {
   messages: [dynamic]Interaction
 }
 
+Filter :: struct {
+  clauses : string,
+  limit : u8
+}
+
+CREATE_STATEMENT : cstring : `
+    CREATE TABLE IF NOT EXISTS odin_logs (
+        id INTEGER PRIMARY KEY
+        , user VARCHAR(64) NOT NULL
+        , message TEXT NOT NULL
+    );
+  `
+
+query_records :: proc(filter: Filter, allocator: mem.Allocator) -> cstring {
+  cmd_bldr := strings.builder_make(allocator)
+  strings.write_string(&cmd_bldr, "SELECT * from odin_logs ")
+  // todo - conditionally filter
+  strings.write_string(&cmd_bldr, filter)
+  strings.write_string(&cmd_bldr, ";")
+  cmd :cstring = strings.clone_to_cstring(cmd_bldr, allocator)
+  // TODO - What should we do with the rows?
+  sqlite.read_rows(cmd, allocator)
+}
+
+insert_record :: proc(content: Interaction, allocator: mem.Allocator) -> cstring {
+  cmd_bldr := strings.builder_make(allocator)
+  strings.write_string(&cmd_bldr, "INSERT INTO odin_logs (user, message) VALUES (")
+  strings.write_string(&cmd_bldr, content.role)
+  strings.write_string(&cmd_bldr, ", ")
+  strings.write_string(&cmd_bldr, content.content)
+  strings.write_string(&cmd_bldr, ");")
+  // Memory leak here
+  cmd:= strings.clone_to_cstring(cmd_bldr, allocator)
+  sqlite.insert_record(cmd, allocator)
+  // TODO - this should execute the query from sqlite
+}
+
 ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = true) {
 
   db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)

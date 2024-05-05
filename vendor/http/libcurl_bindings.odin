@@ -1,7 +1,9 @@
 package curl 
 
+foreign import "system:curl"
+
 Curl_Opt :: enum i32 {
-  Curl_Opt_Url = 2
+  CURLOPT_URL = 2
 }
 
 Curl :: struct {}
@@ -9,9 +11,9 @@ Curl :: struct {}
 @(link_prefix="curl_easy_", default_calling_convention="c")
 foreign curl {
   init :: proc() -> ^Curl --- 
-  set_opt :: proc(^Curl, Curl_Opt, cstring) -> Curl_Code ---
-  perform :: proc(Curl) -> Curl_Code ---
-  cleanup :: proc(^Curl) ---
+  setopt :: proc(req: ^Curl, opt: Curl_Opt, url: cstring) -> Curl_Code ---
+  perform :: proc(req: Curl) -> Curl_Code ---
+  cleanup :: proc(req: ^Curl) ---
 }
 
 Curl_Code :: enum i32 {

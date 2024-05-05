@@ -7,6 +7,7 @@ import "core:os"
 import "core:strings"
 
 import "vendor/sqlite3"
+import "vendor/http"
 
 Error :: enum {
   Invalid_Format, 
@@ -41,6 +42,11 @@ main :: proc() {
         // todo - this should be implemented as a flag
         sqlite3.read_rows(context.temp_allocator)
         defer free_all(context.temp_allocator)
+      case "curl":
+        http.get()
+        //curl : cstring = `curl http://google.com`
+        //result := libc.system(curl)
+        //fmt.println("%s", result)
       case: 
         cmd = help(.Banj)
     }
