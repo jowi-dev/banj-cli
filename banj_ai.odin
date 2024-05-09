@@ -3,14 +3,17 @@ package banj
 
 import client "vendor/odin-http/client"
 import http "vendor/odin-http"
+import curl "vendor/http"
 import sqlite "vendor/sqlite3"
 import "core:fmt"
 import "core:os"
 import "core:c"
+import json "core:encoding/json"
 import "core:strings"
 import "base:runtime"
 import "core:mem"
 
+write :: strings.write_string
 
 Interaction :: struct {
   role: string, 
@@ -36,35 +39,15 @@ CREATE_STATEMENT : cstring : `
     );
   `
 
-query_records :: proc(filter: Filter, allocator: mem.Allocator) -> cstring {
-  cmd_bldr := strings.builder_make(allocator)
-  strings.write_string(&cmd_bldr, "SELECT * from odin_logs ")
-  // todo - conditionally filter
-  strings.write_string(&cmd_bldr, filter)
-  strings.write_string(&cmd_bldr, ";")
-  cmd :cstring = strings.clone_to_cstring(cmd_bldr, allocator)
-  // TODO - What should we do with the rows?
-  sqlite.read_rows(cmd, allocator)
-}
-
-insert_record :: proc(content: Interaction, allocator: mem.Allocator) -> cstring {
-  cmd_bldr := strings.builder_make(allocator)
-  strings.write_string(&cmd_bldr, "INSERT INTO odin_logs (user, message) VALUES (")
-  strings.write_string(&cmd_bldr, content.role)
-  strings.write_string(&cmd_bldr, ", ")
-  strings.write_string(&cmd_bldr, content.content)
-  strings.write_string(&cmd_bldr, ");")
-  // Memory leak here
-  cmd:= strings.clone_to_cstring(cmd_bldr, allocator)
-  sqlite.insert_record(cmd, allocator)
-  // TODO - this should execute the query from sqlite
-}
 
 ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = true) {
 
   db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
   defer free_all(context.temp_allocator)
-  sqlite.create_table(db)
+  sqlite.create_table(CREATE_STATEMENT, db)
+
+  curl.init()
+
 
 
   req := client.Request {}
@@ -75,6 +58,7 @@ ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = tru
 
   pbody := Post_Body{}
   set_request_body(&req, &pbody, prompt)
+  
 
   res, err := client.request(&req, "https://api.anthropic.com/v1/messages") 
   if err != nil {
@@ -98,11 +82,38 @@ ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = tru
 }
 
 
+@(private="file")
+query_records :: proc(filter: Filter, allocator: mem.Allocator) {
+  // FIlters should likely be part of a query dsl
+  cmd_bldr := strings.builder_make(allocator)
+  write(&cmd_bldr, "SELECT * from odin_logs ")
+  // todo - conditionally filter
+  write(&cmd_bldr, filter.clauses)
+  write(&cmd_bldr, ";")
+  built_cmd := strings.to_string(cmd_bldr)
+  cmd :cstring = strings.clone_to_cstring(built_cmd, allocator)
+  // TODO - What should we do with the rows?
+  sqlite.read_rows(cmd, allocator)
+}
+
+@(private="file")
+insert_record :: proc(content: Interaction, db: ^sqlite.Sqlite3, allocator: mem.Allocator) -> (output: Interaction, ok: bool) {
+  cmd_bldr := strings.builder_make(allocator)
+  write(&cmd_bldr, "INSERT INTO odin_logs (user, message) VALUES (")
+  write(&cmd_bldr, content.role)
+  write(&cmd_bldr, ", ")
+  write(&cmd_bldr, content.content)
+  write(&cmd_bldr, ");")
+  built_cmd := strings.to_string(cmd_bldr)
+  cmd :cstring = strings.clone_to_cstring(built_cmd, allocator)
+  // TODO - Should we do anyhting with this record?
+  sqlite.insert_record(cmd, db)
+
+  return content, true
+}
 
 
-
-
-@(private)
+@(private="file")
 set_request_headers :: proc(req: ^client.Request) -> (ok:bool = false) {
   api_key := os.get_env("ANTHROPIC_API_KEY")
   if api_key == ""  {
@@ -125,7 +136,7 @@ set_request_headers :: proc(req: ^client.Request) -> (ok:bool = false) {
   return true
 }
 
-@(private)
+@(private="file")
 set_request_body :: proc(req: ^client.Request, pbody: ^Post_Body, prompt: ^string) {
   content := Interaction{}
   content.role = "user"
@@ -136,8 +147,13 @@ set_request_body :: proc(req: ^client.Request, pbody: ^Post_Body, prompt: ^strin
   pbody.model = "claude-3-opus-20240229"
   pbody.max_tokens = 1024
   pbody.messages = messages 
-  if err := client.with_json(req, pbody^); err != nil {
-    fmt.printf("JSON error: %s", err)
-		return
-  }
+
+  body, err := json.marshal(pbody)
+  fmt.println("JSON: %S", body)
+  return 
+  //return body, nil
+ //  if err := client.with_json(req, pbody^); err != nil {
+ //    fmt.printf("JSON error: %s", err)
+ //		return
+ //  }
 }

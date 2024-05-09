@@ -40,10 +40,10 @@ main :: proc() {
         cmd = ai(cast_os(), &args[1]) or_else help(.AI)
       case "dbg_ai":
         // todo - this should be implemented as a flag
-        sqlite3.read_rows(context.temp_allocator)
+        sqlite3.read_rows(``, context.temp_allocator)
         defer free_all(context.temp_allocator)
       case "curl":
-        http.get()
+        http.get(`https://google.com`)
         //curl : cstring = `curl http://google.com`
         //result := libc.system(curl)
         //fmt.println("%s", result)
