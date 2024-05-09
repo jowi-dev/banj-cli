@@ -7,7 +7,7 @@ import "core:os"
 import "core:strings"
 
 import "vendor/sqlite3"
-import "vendor/http"
+import http "vendor/curl"
 
 Error :: enum {
   Invalid_Format, 
@@ -43,10 +43,20 @@ main :: proc() {
         sqlite3.read_rows(``, context.temp_allocator)
         defer free_all(context.temp_allocator)
       case "curl":
-        http.get(`https://google.com`)
-        //curl : cstring = `curl http://google.com`
-        //result := libc.system(curl)
-        //fmt.println("%s", result)
+        body := make(map[string]string)
+        defer delete(body)
+        body["hello"] = "world";
+
+        header := make(map[string]string)
+        defer delete(header)
+        header["Content-Type"] = "application/json"
+
+
+        headers : http.Header = http.Header{header, false}
+        
+        //http.post(`http://localhost:3000`, body, &headers)
+        http.post(`http://localhost:3000`, body, nil)
+        
       case: 
         cmd = help(.Banj)
     }

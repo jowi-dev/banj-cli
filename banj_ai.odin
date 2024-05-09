@@ -3,7 +3,7 @@ package banj
 
 import client "vendor/odin-http/client"
 import http "vendor/odin-http"
-import curl "vendor/http"
+import "vendor/curl"
 import sqlite "vendor/sqlite3"
 import "core:fmt"
 import "core:os"
@@ -46,7 +46,7 @@ ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = tru
   defer free_all(context.temp_allocator)
   sqlite.create_table(CREATE_STATEMENT, db)
 
-  curl.init()
+  curl.easy_init()
 
 
 
