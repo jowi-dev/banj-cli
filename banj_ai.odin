@@ -1,8 +1,6 @@
 package banj
 
 
-import client "vendor/odin-http/client"
-import http "vendor/odin-http"
 import "vendor/curl"
 import sqlite "vendor/sqlite3"
 import "core:fmt"
@@ -50,32 +48,32 @@ ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = tru
 
 
 
-  req := client.Request {}
-  set_request_headers(&req)
-  client.request_init(&req)
-
-  defer client.request_destroy(&req)
+//  req := client.Request {}
+//  set_request_headers(&req)
+//  client.request_init(&req)
+//
+//  defer client.request_destroy(&req)
 
   pbody := Post_Body{}
-  set_request_body(&req, &pbody, prompt)
+  //set_request_body(&req, &pbody, prompt)
   
 
-  res, err := client.request(&req, "https://api.anthropic.com/v1/messages") 
-  if err != nil {
-		fmt.printf("Request failed: %s", err)
-		return
-  }
-  defer client.response_destroy(&res)
+//  res, err := client.request(&req, "https://api.anthropic.com/v1/messages") 
+//  if err != nil {
+//		fmt.printf("Request failed: %s", err)
+//		return
+//  }
+  //defer client.response_destroy(&res)
 
 
-	body, allocation, berr := client.response_body(&res)
-  if berr != nil {
-		fmt.printf("Error retrieving response body: %s", berr)
-		return
-  }
-	defer client.body_destroy(body, allocation)
+//	body, allocation, berr := client.response_body(&res)
+//  if berr != nil {
+//		fmt.printf("Error retrieving response body: %s", berr)
+//		return
+//  }
+//	defer client.body_destroy(body, allocation)
 
-	fmt.println(body)
+	//fmt.println(body)
 
   sqlite.close(db)
   return "", true
@@ -113,47 +111,47 @@ insert_record :: proc(content: Interaction, db: ^sqlite.Sqlite3, allocator: mem.
 }
 
 
-@(private="file")
-set_request_headers :: proc(req: ^client.Request) -> (ok:bool = false) {
-  api_key := os.get_env("ANTHROPIC_API_KEY")
-  if api_key == ""  {
-    return 
-  }
+//@(private="file")
+//set_request_headers :: proc(req: ^client.Request) -> (ok:bool = false) {
+//  api_key := os.get_env("ANTHROPIC_API_KEY")
+//  if api_key == ""  {
+//    return 
+//  }
+//
+//  headers := http.Headers{}
+//  kv := make(map[string]string)
+//  kv["content-type"]= "application/json"
+//  kv["anthropic-version"] = "2023-06-01"
+//  kv["x-api-key"] = api_key
+//  defer delete(kv)
+//
+//  headers._kv=kv
+//
+//  
+//  req^.method = .Post
+//  req^.headers = headers
+//  fmt.println(req^)
+//  return true
+//}
 
-  headers := http.Headers{}
-  kv := make(map[string]string)
-  kv["content-type"]= "application/json"
-  kv["anthropic-version"] = "2023-06-01"
-  kv["x-api-key"] = api_key
-  defer delete(kv)
-
-  headers._kv=kv
-
-  
-  req^.method = .Post
-  req^.headers = headers
-  fmt.println(req^)
-  return true
-}
-
-@(private="file")
-set_request_body :: proc(req: ^client.Request, pbody: ^Post_Body, prompt: ^string) {
-  content := Interaction{}
-  content.role = "user"
-  content.content = prompt^
-
-  messages : [dynamic]Interaction 
-  append(&messages, content)
-  pbody.model = "claude-3-opus-20240229"
-  pbody.max_tokens = 1024
-  pbody.messages = messages 
-
-  body, err := json.marshal(pbody)
-  fmt.println("JSON: %S", body)
-  return 
-  //return body, nil
- //  if err := client.with_json(req, pbody^); err != nil {
- //    fmt.printf("JSON error: %s", err)
- //		return
- //  }
-}
+//@(private="file")
+//set_request_body :: proc(req: ^client.Request, pbody: ^Post_Body, prompt: ^string) {
+//  content := Interaction{}
+//  content.role = "user"
+//  content.content = prompt^
+//
+//  messages : [dynamic]Interaction 
+//  append(&messages, content)
+//  pbody.model = "claude-3-opus-20240229"
+//  pbody.max_tokens = 1024
+//  pbody.messages = messages 
+//
+//  body, err := json.marshal(pbody)
+//  fmt.println("JSON: %S", body)
+//  return 
+//  //return body, nil
+// //  if err := client.with_json(req, pbody^); err != nil {
+// //    fmt.printf("JSON error: %s", err)
+// //		return
+// //  }
+//}
