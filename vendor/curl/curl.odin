@@ -2,6 +2,7 @@ package curl
 
 import "core:runtime"
 import "core:fmt"
+import "core:mem"
 import "core:strings"
 import json "core:encoding/json"
 
@@ -32,74 +33,57 @@ get :: proc(url : cstring) -> (result: cstring = ``, ok: bool = false){
   return ``, true
 }
 
-//  struct memory {
-//  char *response;
-//  size_t size;
-//};
+post :: proc(url :cstring, body: map[string]string, headers: map[string]string, ctx: mem.Allocator) -> map[string]json.Value {
 
-Memory :: struct {
-  response: []u8, 
-  size: u8
-}
-post :: proc(url :cstring, body: map[string]string, headers: any) {
-  handle := easy_init()
-  //json_body, err := json.marshal(body, {}, context.temp_allocator)
-
-  json_body : cstring = `{"hello": "world"}`
-  //slist := slist{}
-//  defer slist_free_all(slist)
-
-//  for key, value in headers^._kv {
-//    bldr :=  strings.builder_make()
-//    strings.write_string(&bldr, key)
-//    strings.write_string(&bldr, ": ")
-//    strings.write_string(&bldr, value)
-//    blt  := strings.to_string(bldr)
-//    slist_append(&slist, strings.clone_to_cstring(blt))
-//  }
-
-//static size_t cb(void *data, size_t size, size_t nmemb, void *clientp)
-
-//  struct memory {
-//  char *response;
-//  size_t size;
-//};
- 
-//{
-//  size_t realsize = size * nmemb;
-//  struct memory *mem = (struct memory *)clientp;
-
-
+  json_body := map_to_cstring(body, ctx)
+  fmt.println(json_body)
   headers := slist_append(nil, `content-type: application/json`)
-  data := new(map[string]string)
+  // deleted by parent
+  data := make(map[string]json.Value)
+  handle := easy_init()
   easy_setopt(handle, OPT_HTTPHEADER, headers)
   easy_setopt(handle, OPT_POSTFIELDS, json_body)
   easy_setopt(handle, OPT_WRITEFUNCTION, writer)
   easy_setopt(handle, OPT_WRITEDATA, &data)
   easy_setopt(handle, OPT_POST, 1)
   easy_setopt(handle, OPT_URL, url)
-  easy_perform(handle)
+  code := easy_perform(handle)
+
+  return data
 }
 
-writer :: proc "c" (data : rawptr, size: u64, mem: u64, client: rawptr) {
+@(private)
+map_to_cstring :: proc (m: map[string]string, ctx: mem.Allocator) -> cstring {
+  b := strings.builder_make(ctx)
+
+  marsh, err := json.marshal(m, {}, ctx)
+  str := transmute(string)marsh
+
+  strings.write_string(&b, "{ ")
+  for key in m {
+    strings.write_string(&b, key)
+    strings.write_string(&b, ": ")
+    strings.write_string(&b, m[key])
+  }
+  strings.write_string(&b, "}")
+
+  return strings.clone_to_cstring(str)
+}
+
+
+@(private)
+writer :: proc "c" (data : rawptr, size: u64, mem: u64, client: ^map[string]json.Value) {
   context = runtime.default_context()
+  defer free_all(context.temp_allocator)
+  client := client
   c_data := cast(cstring)data
-  fmt.println(c_data)
   s_data := string(c_data)
   u_data := transmute([]u8)s_data
 
-
-  parser := json.make_parser(u_data, json.Specification.JSON, true, context.allocator)
-  fmt.println(parser)
-
-  //str := raw_data(casted^.response)
-//  for index, value in casted {
-//    fmt.println("index ", casted)
-//    fmt.println("value ", casted^.response[value])
-//  }
-  //fmt.println(str^)
-//  res := strings.string_from_ptr(str, len)
-//  fmt.println(res)
-//  json.unmarshal_string(res, str, json.Specification.JSON, context.temp_allocator)
-//  fmt.println("%s", res)
+  parser := json.make_parser(u_data, json.Specification.JSON, true, context.temp_allocator)
+  value, err := json.parse_object(&parser)
+  resp := value.(json.Object)
+  for key in resp {
+    client[key] = resp[key]
+  }
 }

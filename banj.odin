@@ -50,12 +50,11 @@ main :: proc() {
         header := make(map[string]string)
         defer delete(header)
         header["Content-Type"] = "application/json"
-
-
-        headers : http.Header = http.Header{header, false}
-        
         //http.post(`http://localhost:3000`, body, &headers)
-        http.post(`http://localhost:3000`, body, nil)
+        resp := http.post(`http://localhost:3000`, body, header, context.temp_allocator)
+        fmt.println("resp is")
+        fmt.println(resp)
+        defer free_all(context.temp_allocator)
         
       case: 
         cmd = help(.Banj)
