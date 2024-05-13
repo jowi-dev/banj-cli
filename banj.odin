@@ -5,6 +5,7 @@ import "core:fmt"
 import "core:c/libc"
 import "core:os"
 import "core:strings"
+import "core:encoding/json"
 
 import "vendor/sqlite3"
 import http "vendor/curl"
@@ -50,10 +51,9 @@ main :: proc() {
         header := make(map[string]string)
         defer delete(header)
         header["Content-Type"] = "application/json"
-        //http.post(`http://localhost:3000`, body, &headers)
-        resp := http.post(`http://localhost:3000`, body, header, context.temp_allocator)
-        fmt.println("resp is")
-        fmt.println(resp)
+        output := make(map[string]json.Value)
+        defer delete(output)
+        resp_code := http.post(`http://localhost:3000`, body, header, &output, context.temp_allocator)
         defer free_all(context.temp_allocator)
         
       case: 

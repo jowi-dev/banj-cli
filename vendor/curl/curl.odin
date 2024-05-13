@@ -33,23 +33,24 @@ get :: proc(url : cstring) -> (result: cstring = ``, ok: bool = false){
   return ``, true
 }
 
-post :: proc(url :cstring, body: map[string]string, headers: map[string]string, ctx: mem.Allocator) -> map[string]json.Value {
+post :: proc(url :cstring, body: map[string]string, headers: map[string]string, output: ^map[string]json.Value, ctx: mem.Allocator) -> bool {
 
   json_body := map_to_cstring(body, ctx)
   fmt.println(json_body)
   headers := slist_append(nil, `content-type: application/json`)
-  // deleted by parent
-  data := make(map[string]json.Value)
   handle := easy_init()
   easy_setopt(handle, OPT_HTTPHEADER, headers)
   easy_setopt(handle, OPT_POSTFIELDS, json_body)
   easy_setopt(handle, OPT_WRITEFUNCTION, writer)
-  easy_setopt(handle, OPT_WRITEDATA, &data)
+  easy_setopt(handle, OPT_WRITEDATA, output)
   easy_setopt(handle, OPT_POST, 1)
   easy_setopt(handle, OPT_URL, url)
   code := easy_perform(handle)
+  if code != E_OK{
+    return false
+  }
 
-  return data
+  return true
 }
 
 @(private)
@@ -72,18 +73,19 @@ map_to_cstring :: proc (m: map[string]string, ctx: mem.Allocator) -> cstring {
 
 
 @(private)
-writer :: proc "c" (data : rawptr, size: u64, mem: u64, client: ^map[string]json.Value) {
+writer :: proc "c" (data : rawptr, size: u64, mem: u64, output: ^map[string]json.Value) {
   context = runtime.default_context()
-  defer free_all(context.temp_allocator)
-  client := client
   c_data := cast(cstring)data
   s_data := string(c_data)
   u_data := transmute([]u8)s_data
 
-  parser := json.make_parser(u_data, json.Specification.JSON, true, context.temp_allocator)
-  value, err := json.parse_object(&parser)
+  value, err := json.parse(u_data, json.Specification.JSON, true, context.temp_allocator)
+  if err != .None {return}
   resp := value.(json.Object)
-  for key in resp {
-    client[key] = resp[key]
+
+  for key, value in  resp{
+    output[key] = value
   }
+
+  return
 }
