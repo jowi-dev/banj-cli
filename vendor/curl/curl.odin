@@ -6,15 +6,9 @@ import "core:mem"
 import "core:strings"
 import json "core:encoding/json"
 
-Header :: struct {
-	_kv:      map[string]string,
-	readonly: bool,
-}
-
 get :: proc(url : cstring) -> (result: cstring = ``, ok: bool = false){
   handle := easy_init()
   // memory leak here 
-  //setopt(handle, CurlOption.CURLOPT_URL, url)
   easy_setopt(handle, OPT_URL, `https://google.com`)
   libcurl_result := easy_perform(handle)
 
@@ -29,16 +23,17 @@ get :: proc(url : cstring) -> (result: cstring = ``, ok: bool = false){
   }
 
   easy_cleanup(handle)
-  //libcurl_result
   return ``, true
 }
 
-post :: proc(url :cstring, body: map[string]string, headers: map[string]string, output: ^map[string]json.Value, ctx: mem.Allocator) -> bool {
+post :: proc(url :cstring, body: map[string]string, headers: ^map[string]string, output: ^map[string]json.Value, ctx: mem.Allocator) -> bool {
 
   json_body := map_to_cstring(body, ctx)
-  fmt.println(json_body)
-  headers := slist_append(nil, `content-type: application/json`)
+  content_type := `content-type: application/json`
+  headers := slist_append(nil, strings.clone_to_cstring(content_type, ctx))
+  defer slist_free_all(headers)
   handle := easy_init()
+  defer easy_cleanup(handle)
   easy_setopt(handle, OPT_HTTPHEADER, headers)
   easy_setopt(handle, OPT_POSTFIELDS, json_body)
   easy_setopt(handle, OPT_WRITEFUNCTION, writer)
@@ -68,7 +63,7 @@ map_to_cstring :: proc (m: map[string]string, ctx: mem.Allocator) -> cstring {
   }
   strings.write_string(&b, "}")
 
-  return strings.clone_to_cstring(str)
+  return strings.clone_to_cstring(str, ctx)
 }
 
 
@@ -83,9 +78,11 @@ writer :: proc "c" (data : rawptr, size: u64, mem: u64, output: ^map[string]json
   if err != .None {return}
   resp := value.(json.Object)
 
-  for key, value in  resp{
-    output[key] = value
-  }
+  output^ = cast(map[string]json.Value)resp
+
+//  for key, value in  resp{
+//    output[key] = value
+//  }
 
   return
 }

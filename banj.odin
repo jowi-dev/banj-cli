@@ -51,15 +51,17 @@ main :: proc() {
         header := make(map[string]string)
         defer delete(header)
         header["Content-Type"] = "application/json"
-        output := make(map[string]json.Value)
+        output := make(map[string]json.Value, 64, context.temp_allocator)
         defer delete(output)
-        resp_code := http.post(`http://localhost:3000`, body, header, &output, context.temp_allocator)
+        resp_code := http.post(`http://localhost:3000`, body, &header, &output, context.temp_allocator)
         defer free_all(context.temp_allocator)
         
+        fmt.println(output)
       case: 
         cmd = help(.Banj)
     }
   }
+  //defer free_all(context.allocator)
   if cmd != `` {
     status := libc.system(cmd)
     fmt.println(status)
