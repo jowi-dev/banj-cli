@@ -6,6 +6,15 @@ import "core:mem"
 import "core:strings"
 import json "core:encoding/json"
 
+Post_Context :: struct($Header, $Body, $Output: typeid) {
+  url: cstring,
+  headers: Header,
+  body: Body, 
+  output: Output,
+  callback_fn: proc "c" (data : rawptr, size: u64, mem: u64, output: Output),
+  allocator: mem.Allocator
+}
+
 get :: proc(url : cstring) -> (result: cstring = ``, ok: bool = false){
   handle := easy_init()
   // memory leak here 
@@ -26,21 +35,27 @@ get :: proc(url : cstring) -> (result: cstring = ``, ok: bool = false){
   return ``, true
 }
 
-post :: proc(url :cstring, body: map[string]string, headers: ^map[string]string, output: ^map[string]json.Value, ctx: mem.Allocator) -> bool {
-
-  json_body := map_to_cstring(body, ctx)
-  content_type := `content-type: application/json`
-  headers := slist_append(nil, strings.clone_to_cstring(content_type, ctx))
-  defer slist_free_all(headers)
+post :: proc(ctx :Post_Context($H, $B, $O)) -> bool {
+  //initialize assets
   handle := easy_init()
   defer easy_cleanup(handle)
-  easy_setopt(handle, OPT_HTTPHEADER, headers)
+
+  c_headers := marshal_to_cstring(ctx.headers, ctx.allocator)
+  libcurl_headers := slist_append(nil, c_headers)
+  //defer slist_free_all(libcurl_headers)
+
+  json_body := marshal_to_cstring(ctx.body, ctx.allocator) // clean this in the outer scope
+
+  //set options
+  // TODO - c_headers needs to have \" removed from it, then be split on { || , || } - from there it can be pushed through slist_append and sent as a properly formatted header
+  easy_setopt(handle, OPT_HTTPHEADER, &c_headers)
   easy_setopt(handle, OPT_POSTFIELDS, json_body)
-  easy_setopt(handle, OPT_WRITEFUNCTION, writer)
-  easy_setopt(handle, OPT_WRITEDATA, output)
+  easy_setopt(handle, OPT_WRITEFUNCTION, ctx.callback_fn)
+  easy_setopt(handle, OPT_WRITEDATA, ctx.output)
   easy_setopt(handle, OPT_POST, 1)
-  easy_setopt(handle, OPT_URL, url)
-  code := easy_perform(handle)
+  easy_setopt(handle, OPT_URL, ctx.url)
+
+  code := easy_perform(handle) // do the cha cha
   if code != E_OK{
     return false
   }
@@ -49,40 +64,28 @@ post :: proc(url :cstring, body: map[string]string, headers: ^map[string]string,
 }
 
 @(private)
-map_to_cstring :: proc (m: map[string]string, ctx: mem.Allocator) -> cstring {
-  b := strings.builder_make(ctx)
-
+marshal_to_cstring :: proc (m: any, ctx: mem.Allocator) -> cstring {
   marsh, err := json.marshal(m, {}, ctx)
   str := transmute(string)marsh
-
-  strings.write_string(&b, "{ ")
-  for key in m {
-    strings.write_string(&b, key)
-    strings.write_string(&b, ": ")
-    strings.write_string(&b, m[key])
-  }
-  strings.write_string(&b, "}")
 
   return strings.clone_to_cstring(str, ctx)
 }
 
+//@(private)
+//encode_headers :: proc(headers: cstring, ctx: mem.Allocator) -> ^slist {
+////  libcurl_headers : ^slist = nil
+////  for key, value in headers {
+////    bldr := strings.builder_make(ctx)
+////    strings.write_string(&bldr, key)
+////    strings.write_string(&bldr, ": ")
+////    strings.write_string(&bldr, value)
+////    str := strings.to_string(bldr)
+////    c_str := strings.clone_to_cstring(str, ctx)
+////
+////    libcurl_headers = slist_append(libcurl_headers, c_str)
+////  }
+//  //return libcurl_headers
+//  //return slist_append(nil, headers)
+//}
 
-@(private)
-writer :: proc "c" (data : rawptr, size: u64, mem: u64, output: ^map[string]json.Value) {
-  context = runtime.default_context()
-  c_data := cast(cstring)data
-  s_data := string(c_data)
-  u_data := transmute([]u8)s_data
 
-  value, err := json.parse(u_data, json.Specification.JSON, true, context.temp_allocator)
-  if err != .None {return}
-  resp := value.(json.Object)
-
-  output^ = cast(map[string]json.Value)resp
-
-//  for key, value in  resp{
-//    output[key] = value
-//  }
-
-  return
-}

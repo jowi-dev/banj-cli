@@ -25,6 +25,11 @@ Error :: enum {
 * - Monitoring commands
 * - Display commands
 */
+Main_Headers :: struct {
+  content_type: string `json:"content-type"`, 
+  x_api_key: string `json:"x-api-key"`
+
+}
 main :: proc() {
   args, error := process_args()
   defer delete(args)
@@ -44,19 +49,25 @@ main :: proc() {
         sqlite3.read_rows(``, context.temp_allocator)
         defer free_all(context.temp_allocator)
       case "curl":
-        body := make(map[string]string)
-        defer delete(body)
-        body["hello"] = "world";
-
-        header := make(map[string]string)
-        defer delete(header)
-        header["Content-Type"] = "application/json"
-        output := make(map[string]json.Value, 64, context.temp_allocator)
-        defer delete(output)
-        resp_code := http.post(`http://localhost:3000`, body, &header, &output, context.temp_allocator)
-        defer free_all(context.temp_allocator)
-        
-        fmt.println(output)
+        test_headers := Main_Headers { "application/json", "wigglywiggly" }
+        //value, err := json.marshal_to_writer(test_headers, {}, context.temp_allocator)
+        sb := strings.builder_make()
+        opts := json.Marshal_Options{
+          json.Specification.JSON5,
+          false, //pretty
+          false, //spaces
+          4, //write uint
+          true, //quotes
+          false, //use equals
+          false, //sort keys
+          false, //use enum values
+          4,
+          false, 
+          false, 
+        }
+        err := json.marshal_to_builder(&sb, test_headers, &opts)
+        value := strings.to_string(sb)
+        fmt.println(value)
       case: 
         cmd = help(.Banj)
     }
@@ -96,3 +107,4 @@ get_arg :: proc(arg: string) -> (result: string, ok: bool = true) {
 
   return arg, ok
 }
+
