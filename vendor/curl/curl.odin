@@ -40,15 +40,18 @@ post :: proc(ctx :Post_Context($H, $B, $O)) -> bool {
   handle := easy_init()
   defer easy_cleanup(handle)
 
-  c_headers := marshal_to_cstring(ctx.headers, ctx.allocator)
-  libcurl_headers := slist_append(nil, c_headers)
+  slist_headers : ^slist = encode_headers(ctx.headers, ctx.allocator)
+  fmt.println(slist_headers)
+  fmt.println(slist_headers^)
+//  c_headers := marshal_to_cstring(ctx.headers, ctx.allocator)
+//  libcurl_headers := slist_append(nil, c_headers)
   //defer slist_free_all(libcurl_headers)
 
   json_body := marshal_to_cstring(ctx.body, ctx.allocator) // clean this in the outer scope
 
   //set options
   // TODO - c_headers needs to have \" removed from it, then be split on { || , || } - from there it can be pushed through slist_append and sent as a properly formatted header
-  easy_setopt(handle, OPT_HTTPHEADER, &c_headers)
+  easy_setopt(handle, OPT_HTTPHEADER, slist_headers)
   easy_setopt(handle, OPT_POSTFIELDS, json_body)
   easy_setopt(handle, OPT_WRITEFUNCTION, ctx.callback_fn)
   easy_setopt(handle, OPT_WRITEDATA, ctx.output)
@@ -65,27 +68,54 @@ post :: proc(ctx :Post_Context($H, $B, $O)) -> bool {
 
 @(private)
 marshal_to_cstring :: proc (m: any, ctx: mem.Allocator) -> cstring {
+  /*
+     this function needs to use marshal_to_builder and write to a string instead 
+     so we can plit the string based on commas and write each one to a c_string that is then taken to the 
+     slist_append function one by one
+     */
   marsh, err := json.marshal(m, {}, ctx)
   str := transmute(string)marsh
 
   return strings.clone_to_cstring(str, ctx)
 }
 
-//@(private)
-//encode_headers :: proc(headers: cstring, ctx: mem.Allocator) -> ^slist {
-////  libcurl_headers : ^slist = nil
-////  for key, value in headers {
-////    bldr := strings.builder_make(ctx)
-////    strings.write_string(&bldr, key)
-////    strings.write_string(&bldr, ": ")
-////    strings.write_string(&bldr, value)
-////    str := strings.to_string(bldr)
-////    c_str := strings.clone_to_cstring(str, ctx)
-////
-////    libcurl_headers = slist_append(libcurl_headers, c_str)
-////  }
-//  //return libcurl_headers
-//  //return slist_append(nil, headers)
-//}
+@(private)
+encode_headers :: proc(headers: any, ctx: mem.Allocator) -> ^slist {
+  bldr := strings.builder_make()
+
+  opts := json.Marshal_Options{
+    json.Specification.JSON5,
+    false, //pretty
+    false, //spaces
+    4, //write uint
+    true, //quotes
+    false, //use equals
+    false, //sort keys
+    false, //use enum values
+    4,
+    false, 
+    false, 
+  }
+  json.marshal_to_builder(&bldr, headers, &opts)
+  str := strings.to_string(bldr)
+  fmt.println(str)
+  err : bool 
+  str, err = strings.remove_all(str, "{")
+  str, err = strings.remove_all(str, "}")
+  fmt.println(str)
+  splits := strings.split(str, ",")
+  fmt.println(str)
+
+  res : ^slist = nil
+
+  for split, index in splits {
+    c_split : cstring = strings.clone_to_cstring(split)
+    fmt.println(index)
+    fmt.println(split)
+    res = slist_append(res, c_split)
+  }
+
+  return res
+}
 
 
