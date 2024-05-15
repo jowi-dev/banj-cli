@@ -23,8 +23,8 @@ Interaction :: struct {
 
 @(private="file")
 Headers :: struct {
-  content_type: string `json:"content-type"`, 
   x_api_key: string `json:"x-api-key"`,
+  content_type: string `json:"content-type"`, 
   anthropic_version: string `json:"anthropic-version"`,
 }
 
@@ -160,7 +160,6 @@ callback :: proc "c" (data : rawptr, size: u64, mem: u64, output: ^Response) {
   resp := value.(json.Object)
   fmt.println(value)
 
-  //output^ = cast(map[string]json.Value)resp
 
   return
 }
