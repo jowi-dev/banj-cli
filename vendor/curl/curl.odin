@@ -53,9 +53,8 @@ post :: proc(ctx :Post_Context($H, $B, $O)) -> bool {
   easy_setopt(handle, OPT_URL, ctx.url)
 
   code := easy_perform(handle) // do the cha cha
-  if code != E_OK{
-    return false
-  }
+
+  if code != E_OK do return false
 
   return true
 }

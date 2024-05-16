@@ -41,6 +41,8 @@ Response :: struct {
   response: string,
 }
 
+
+
 Filter :: struct {
   clauses : string,
   limit : u8
@@ -75,39 +77,45 @@ ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = tru
     context.allocator,
   }
 
+
   res := curl.post(post_context)
+
+  interaction := Interaction {"assistant", output.response }
+
+  insert_record(interaction, db, context.allocator)
 
   sqlite.close(db)
   return "", true
 }
 
 
-@(private="file")
 query_records :: proc(filter: Filter, allocator: mem.Allocator) {
   // FIlters should likely be part of a query dsl
   cmd_bldr := strings.builder_make(allocator)
   write(&cmd_bldr, "SELECT * from odin_logs ")
-  // todo - conditionally filter
-  write(&cmd_bldr, filter.clauses)
+  if filter.clauses != `` {
+    write(&cmd_bldr, "WHERE ")
+    write(&cmd_bldr, filter.clauses)
+  }
   write(&cmd_bldr, ";")
   built_cmd := strings.to_string(cmd_bldr)
   cmd :cstring = strings.clone_to_cstring(built_cmd, allocator)
-  // TODO - What should we do with the rows?
-  sqlite.read_rows(cmd, allocator)
+  //TODO - this cmd needs to be a statement
+  //sqlite.all(cmd, allocator)
 }
 
 @(private="file")
 insert_record :: proc(content: Interaction, db: ^sqlite.Sqlite3, allocator: mem.Allocator) -> (output: Interaction, ok: bool) {
   cmd_bldr := strings.builder_make(allocator)
-  write(&cmd_bldr, "INSERT INTO odin_logs (user, message) VALUES (")
+  write(&cmd_bldr, "INSERT INTO odin_logs ('user', 'message') VALUES ('")
   write(&cmd_bldr, content.role)
-  write(&cmd_bldr, ", ")
+  write(&cmd_bldr, "', '")
   write(&cmd_bldr, content.content)
-  write(&cmd_bldr, ");")
+  write(&cmd_bldr, "');")
   built_cmd := strings.to_string(cmd_bldr)
   cmd :cstring = strings.clone_to_cstring(built_cmd, allocator)
-  // TODO - Should we do anyhting with this record?
-  sqlite.insert_record(cmd, db)
+  // TODO - this needs to be a statement
+  //sqlite.insert_record(cmd, db)
 
   return content, true
 }
@@ -158,14 +166,9 @@ callback :: proc "c" (data : rawptr, size: u64, mem: u64, output: ^Response) {
     return
   }
   resp := value.(json.Object)
-  fmt.println(value)
-  fmt.println(resp["content"])
-  fmt.println(resp["content"].(json.Array))
   arr_item := resp["content"].(json.Array)[0]
-  fmt.println(arr_item.(json.Object)["text"])
   result := arr_item.(json.Object)["text"]
 
-  // TODO - figure out how to convert result to a string and you win
   output.response = result.(string)
 
   return

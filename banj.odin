@@ -5,7 +5,6 @@ import "core:fmt"
 import "core:c/libc"
 import "core:os"
 import "core:strings"
-import "core:encoding/json"
 
 import "vendor/sqlite3"
 import http "vendor/curl"
@@ -25,11 +24,6 @@ Error :: enum {
 * - Monitoring commands
 * - Display commands
 */
-Main_Headers :: struct {
-  content_type: string `json:"content-type"`, 
-  x_api_key: string `json:"x-api-key"`
-
-}
 main :: proc() {
   args, error := process_args()
   defer delete(args)
@@ -44,35 +38,15 @@ main :: proc() {
         cmd = sleep(cast_os()) or_else help(.Sleep)
       case "ai":
         cmd = ai(cast_os(), &args[1]) or_else help(.AI)
-      case "dbg_ai":
+      // this command is mostly for creating new commands or testing out functionality for easy integration
+      case "dbg":
         // todo - this should be implemented as a flag
-        sqlite3.read_rows(``, context.temp_allocator)
+        query_records(Filter{``, 100}, context.temp_allocator)
         defer free_all(context.temp_allocator)
-      case "curl":
-        test_headers := Main_Headers { "application/json", "wigglywiggly" }
-        //value, err := json.marshal_to_writer(test_headers, {}, context.temp_allocator)
-        sb := strings.builder_make()
-        opts := json.Marshal_Options{
-          json.Specification.JSON5,
-          false, //pretty
-          false, //spaces
-          4, //write uint
-          true, //quotes
-          false, //use equals
-          false, //sort keys
-          false, //use enum values
-          4,
-          false, 
-          false, 
-        }
-        err := json.marshal_to_builder(&sb, test_headers, &opts)
-        value := strings.to_string(sb)
-        fmt.println(value)
       case: 
         cmd = help(.Banj)
     }
   }
-  //defer free_all(context.allocator)
   if cmd != `` {
     status := libc.system(cmd)
     fmt.println(status)
