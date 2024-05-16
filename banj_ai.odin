@@ -166,7 +166,7 @@ callback :: proc "c" (data : rawptr, size: u64, mem: u64, output: ^Response) {
   result := arr_item.(json.Object)["text"]
 
   // TODO - figure out how to convert result to a string and you win
-  output.response = result
+  output.response = result.(string)
 
   return
 }
