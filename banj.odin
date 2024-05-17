@@ -6,6 +6,10 @@ import "core:c/libc"
 import "core:os"
 import "core:strings"
 
+import banjos "os"
+import ai "ai"
+import help "help"
+
 import "vendor/sqlite3"
 import http "vendor/curl"
 
@@ -29,22 +33,21 @@ main :: proc() {
   defer delete(args)
 
   cmd:cstring = ``
-  if error != nil || len(os.args) == 1 do cmd = help(.Banj)
+  if error != nil || len(os.args) == 1 do cmd = help.print(.Banj)
   else {
     switch args[0] {
       case "tune", "rebuild":
-        cmd = rebuild(cast_os()) or_else help(.Rebuild)
+        cmd = banjos.rebuild(cast_os()) or_else help.print(.Rebuild)
       case "sleep":
-        cmd = sleep(cast_os()) or_else help(.Sleep)
+        cmd = banjos.sleep(cast_os()) or_else help.print(.Sleep)
       case "ai":
-        cmd = ai(cast_os(), &args[1]) or_else help(.AI)
+        cmd = ai.prompt(cast_os(), &args[1]) or_else help.print(.AI)
       // this command is mostly for creating new commands or testing out functionality for easy integration
       case "dbg":
-        // todo - this should be implemented as a flag
-        query_records(Filter{``, 100}, context.temp_allocator)
-        defer free_all(context.temp_allocator)
+
+        ai.print_logs(context.temp_allocator)
       case: 
-        cmd = help(.Banj)
+        cmd = help.print(.Banj)
     }
   }
   if cmd != `` {
@@ -54,7 +57,7 @@ main :: proc() {
   return 
 }
 
-cast_os :: proc() -> SupportedOS {
+cast_os :: proc() -> banjos.SupportedOS {
   if ODIN_OS == .Darwin do return .Darwin
   return .Linux
 }

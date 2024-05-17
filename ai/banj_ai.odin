@@ -1,8 +1,9 @@
-package banj
+package banj_ai
 
 
-import "vendor/curl"
-import sqlite "vendor/sqlite3"
+import banjos "../os"
+import "../vendor/curl"
+import sqlite "../vendor/sqlite3"
 import "core:fmt"
 import "core:os"
 import "core:c"
@@ -57,7 +58,7 @@ CREATE_STATEMENT : cstring : `
   `
 
 
-ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = true) {
+prompt :: proc(OS: banjos.SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = true) {
 
   db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
   defer free_all(context.temp_allocator)
@@ -86,6 +87,15 @@ ai :: proc(OS: SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = tru
 
   sqlite.close(db)
   return "", true
+}
+
+// prints logs to stdout
+print_logs :: proc(allocator: mem.Allocator) {
+  db : ^sqlite.Sqlite3
+  statement := sqlite.Statement(Interaction, ^Interaction){}
+  statement.connection = db
+
+  sqlite.all(statement, allocator)
 }
 
 

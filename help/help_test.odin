@@ -1,4 +1,4 @@
-package banj
+package banj_help
 
 import "core:testing"
 

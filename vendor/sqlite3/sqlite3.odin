@@ -8,11 +8,16 @@ import "core:os"
 import "core:strings"
 import "base:runtime"
 
+write :: strings.write_string
+
 DB_FILE :: "dev.db"
 
 Statement :: struct($Record, $Output: typeid) {
+  connection: ^Sqlite3,
   record: Record,
-  output: ^Output
+  output: ^Output,
+  status: Status,
+  error: ^cstring
 }
 
 connect_db :: proc(allocator: mem.Allocator) -> (db : ^Sqlite3) {
@@ -86,21 +91,30 @@ update :: proc() {}
 
 get :: proc() {}
 
-all :: proc(statement:cstring, allocator: mem.Allocator) {
+all :: proc(statement: Statement($R, $O), allocator: mem.Allocator) {
   fmt.println("starting read row function")
-  db := connect_db(allocator)
+  //shadow the param
+  statement := statement
+  if statement.connection == nil do statement.connection = connect_db(allocator)
 
-  // probably needs a free
-  ptr : rawptr 
-  err : ^cstring 
-  status := exec(db, statement, result_reader, ptr, err)
+  record_type := typeid_of(type_of(statement.record))
+  info := type_info_of(record_type)
 
-  if status != nil {
-    fmt.eprintf("Error: %s | read_rows/2 | '%s'(%v): %s", err, DB_FILE, status, errstr(status))
+  bldr := strings.builder_make()
+  write(&bldr, "SELECT * from ")
+  write(&bldr, strings.to_lower(info.variant.(runtime.Type_Info_Named).name, allocator))
+  write(&bldr, "s;")
+  sql := strings.to_string(bldr)
+  fmt.println(sql)
+
+  statement.status = exec(statement.connection, strings.clone_to_cstring(sql), result_reader, statement.output, statement.error)
+
+  if statement.status != nil {
+    fmt.eprintf("Error: %s | read_rows/2 | '%s'(%v): %s", statement.error, DB_FILE, statement.status, errstr(statement.status))
     os.exit(1)
   }
   
-  close(db)
+  close(statement.connection)
 }
 
 // TODO - can this rawptr in ctx point to a list/vector/etc that is populated with the values?
@@ -110,7 +124,7 @@ result_reader :: proc "c" (ctx: rawptr, n_columns: c.int, col_values: [^]cstring
   defer free(ctx)
 
   for c_name, index in columns {
-    fmt.println(c_name, col_values[index] )
+    //fmt.println(c_name, col_values[index] )
   }
   return 0
 }
