@@ -15,7 +15,7 @@ DB_FILE :: "dev.db"
 Statement :: struct($Record, $Output: typeid) {
   connection: ^Sqlite3,
   record: Record,
-  output: ^Output,
+  output: Output,
   status: Status,
   error: ^cstring
 }
@@ -50,41 +50,61 @@ create_table :: proc(statement:cstring, db: ^Sqlite3) {
   }
 }
 
-insert_record :: proc(statement: Statement($I, $O), db: ^Sqlite3) { 
-  field_names :[]string = reflect.struct_field_names(statement.record)
-  table_name := reflect.struct_tag_get()
+insert_record :: proc(statement: Statement($I, $O), allocator: mem.Allocator) { 
+  field_names := reflect.struct_field_names(I)
+  statement := statement
+
+  record_type := typeid_of(I)
+  info := type_info_of(record_type)
+  table_name := strings.to_lower(info.variant.(runtime.Type_Info_Named).name, allocator)
+
   bldr := strings.builder_make()
-  write(&blder, "INSERT INTO ")
-  write(&blder, table_name)
-  write(&blder, " (")
+  write(&bldr, "INSERT INTO ")
+  write(&bldr, table_name)
+  write(&bldr, "s")
+  write(&bldr, " (")
   for col_name, index in field_names {
-    index == 0 ? write(&bldr, "'") : write(&blder, ", '")
+    prepend := index == 0 ? "'" : ", '"
+    write(&bldr, prepend)
     write(&bldr, col_name)
-    write(&blder, "'")
+    write(&bldr, "'")
   }
-  write(&blder, ") VALUES")
+  write(&bldr, ") VALUES (")
 
   for col_name, index in field_names {
-    index == 0 ? write(&bldr, "'") : write(&blder, ", '")
-    write(&bldr, reflect.struct_field_value_by_name(statement.record, col_name).(string))
-    write(&blder, "'")
+    prepend := index == 0 ?  "'" : ", '"
+    write(&bldr, prepend)
+    fuggin_output, fuggin_err := reflect.struct_field_value_by_name(statement.record, col_name).(string)
+    fuggin_output, fuggin_err = strings.remove_all(fuggin_output, "'")
+    write(&bldr, fuggin_output)
+    write(&bldr, "'")
+  }
+  write(&bldr, ")")
+
+  cmd := strings.to_string(bldr)
+
+  c_stmt := strings.clone_to_cstring(cmd)
+  fmt.println(c_stmt)
+
+  statement.status = exec(statement.connection, c_stmt, print_results, &statement.output, statement.error)
+
+  if statement.status != nil {
+    fmt.eprintf("Error: %s | insert_record/2 | '%s'(%v): %s", statement.error, DB_FILE, statement.status, errstr(statement.status))
+    os.exit(1)
   }
 
-  statement := strings.to_string(bldr)
+}
 
-  c_stmt := strings.clone_to_cstring(statement)
-
-  // probably needs a free
-  ptr : rawptr  
-  err : ^cstring 
-  // the nil value represents a callback - write a confirmation function maybe
-  status := exec(db, statement, result_reader, &statement.output, err)
-
+query :: proc(sql : string, db: ^Sqlite3, allocator: mem.Allocator){
+  c_sql := strings.clone_to_cstring(sql)
+  ctx : rawptr
+  err : ^cstring
+  fmt.println(c_sql)
+  status := exec(db, c_sql, print_results, ctx, err)
   if status != nil {
     fmt.eprintf("Error: %s | insert_record/2 | '%s'(%v): %s", err, DB_FILE, status, errstr(status))
     os.exit(1)
   }
-
 }
 
 update :: proc() {}
@@ -99,15 +119,16 @@ all :: proc(statement: Statement($R, $O), allocator: mem.Allocator) {
 
   record_type := typeid_of(type_of(statement.record))
   info := type_info_of(record_type)
+  reflected_name := strings.to_lower(info.variant.(runtime.Type_Info_Named).name, allocator)
 
   bldr := strings.builder_make()
-  write(&bldr, "SELECT * from ")
-  write(&bldr, strings.to_lower(info.variant.(runtime.Type_Info_Named).name, allocator))
-  write(&bldr, "s;")
+  write(&bldr, "SELECT * from odin_logs;")
+//  write(&bldr, reflected_name)
+//  write(&bldr, "s;")
   sql := strings.to_string(bldr)
   fmt.println(sql)
 
-  statement.status = exec(statement.connection, strings.clone_to_cstring(sql), result_reader, statement.output, statement.error)
+  statement.status = exec(statement.connection, strings.clone_to_cstring(sql), print_results, statement.output, statement.error)
 
   if statement.status != nil {
     fmt.eprintf("Error: %s | read_rows/2 | '%s'(%v): %s", statement.error, DB_FILE, statement.status, errstr(statement.status))
@@ -117,14 +138,25 @@ all :: proc(statement: Statement($R, $O), allocator: mem.Allocator) {
   close(statement.connection)
 }
 
-// TODO - can this rawptr in ctx point to a list/vector/etc that is populated with the values?
-result_reader :: proc "c" (ctx: rawptr, n_columns: c.int, col_values: [^]cstring, col_names: [^]cstring) -> c.int {
+//assign_list_results :: proc "c" (ctx: $T, n_columns: c.int, col_values: [^]cstring, col_names: [^]cstring) -> c.int {
+//  context = runtime.default_context()
+//  columns := col_names[:3]
+//  defer free(ctx)
+//
+//  for c_name, index in columns {
+//    fmt.println(c_name, col_values[index] )
+//  }
+//  return 0
+//}
+
+print_results :: proc "c" (ctx: rawptr, n_columns: c.int, col_values: [^]cstring, col_names: [^]cstring) -> c.int {
   context = runtime.default_context()
-  columns := col_names[:2]
+  fmt.println("hello from print_results")
+  columns := col_names[:3]
   defer free(ctx)
 
   for c_name, index in columns {
-    //fmt.println(c_name, col_values[index] )
+    fmt.println(c_name, col_values[index] )
   }
   return 0
 }

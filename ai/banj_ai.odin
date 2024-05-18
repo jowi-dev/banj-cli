@@ -50,10 +50,10 @@ Filter :: struct {
 }
 
 CREATE_STATEMENT : cstring : `
-    CREATE TABLE IF NOT EXISTS odin_logs (
-        id INTEGER PRIMARY KEY
-        , user VARCHAR(64) NOT NULL
-        , message TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS interactions (
+        id INTEGER PRIMARY KEY 
+        , role VARCHAR(64) NOT NULL
+        , content TEXT NOT NULL
     );
   `
 
@@ -81,9 +81,16 @@ prompt :: proc(OS: banjos.SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok
 
   res := curl.post(post_context)
 
-  interaction := Interaction {"assistant", output.response }
+  interaction := Interaction {role = "assistant", content = output.response }
+  out : ^Interaction
 
-  insert_record(interaction, db, context.allocator)
+  transaction := sqlite.Statement(Interaction, ^Interaction) {
+    record = interaction,
+    output = out,
+    connection = db,
+  }
+
+  sqlite.insert_record(transaction, context.allocator)
 
   sqlite.close(db)
   return "", true
@@ -176,6 +183,7 @@ callback :: proc "c" (data : rawptr, size: u64, mem: u64, output: ^Response) {
     return
   }
   resp := value.(json.Object)
+  fmt.println(resp)
   arr_item := resp["content"].(json.Array)[0]
   result := arr_item.(json.Object)["text"]
 

@@ -10,7 +10,7 @@ import banjos "os"
 import ai "ai"
 import help "help"
 
-import "vendor/sqlite3"
+import sqlite "vendor/sqlite3"
 import http "vendor/curl"
 
 Error :: enum {
@@ -44,8 +44,15 @@ main :: proc() {
         cmd = ai.prompt(cast_os(), &args[1]) or_else help.print(.AI)
       // this command is mostly for creating new commands or testing out functionality for easy integration
       case "dbg":
-
         ai.print_logs(context.temp_allocator)
+      case "query":
+        db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
+        sqlite.query(args[1], db, context.temp_allocator)
+        defer free_all(context.temp_allocator)
+      case "init":
+        db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
+        defer free_all(context.temp_allocator)
+        sqlite.create_table(ai.CREATE_STATEMENT, db)
       case: 
         cmd = help.print(.Banj)
     }
