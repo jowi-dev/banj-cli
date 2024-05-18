@@ -21,12 +21,12 @@ Error :: enum {
 
 /*
 * TODO 
-* - AI Commands - for sure new project
-* - Garbage collect both generations and derivations
-* - GC Home manager?
+* - AI Commands - for sure new project - MVP DONE - /ai/banj_ai.odin
+* - Garbage collect both generations and derivations - banj_os.odin
+* - GC Home manager? - put in banj_os.odin
 * - Project CLI. Maybe seperate project
-* - Monitoring commands
-* - Display commands
+* - Monitoring commands - DONE - /os/monitor.odin
+* - Display commands - DONE - /os/display.odin
 */
 main :: proc() {
   args, error := process_args()
@@ -40,16 +40,22 @@ main :: proc() {
         cmd = banjos.rebuild(cast_os()) or_else help.print(.Rebuild)
       case "sleep":
         cmd = banjos.sleep(cast_os()) or_else help.print(.Sleep)
+      case "monitor":
+        cmd = banjos.monitor(cast_os(), &args[1]) or_else help.print(.Banj) // needs to be monitor
+      case "display":
+        cmd = banjos.display(cast_os(), &args[1]) or_else help.print(.Banj) // needs to be display
       case "ai":
         cmd = ai.prompt(cast_os(), &args[1]) or_else help.print(.AI)
-      // this command is mostly for creating new commands or testing out functionality for easy integration
       case "dbg":
+        // this command is mostly for creating new commands or testing out functionality for easy integration
         ai.print_logs(context.temp_allocator)
       case "query":
+        // useful for ad-hoc querying of our local db
         db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
         sqlite.query(args[1], db, context.temp_allocator)
         defer free_all(context.temp_allocator)
       case "init":
+        // useful to setup DB tables
         db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
         defer free_all(context.temp_allocator)
         sqlite.create_table(ai.CREATE_STATEMENT, db)

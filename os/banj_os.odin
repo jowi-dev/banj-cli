@@ -33,3 +33,4 @@ sleep :: proc(os: SupportedOS) -> (cmd:cstring = "", ok:bool = true){
   }
   return cmd, !ok
 }
+
