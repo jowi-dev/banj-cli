@@ -79,7 +79,7 @@ process_args :: proc() -> (args: [dynamic]string, error: Error) {
   if len(os.args) <= 1 do return args, Error.Invalid_Args
 
   error = Error.Invalid_Format
-  for i := 0; i < len(os.args); i +=1{
+  for i := 1; i < len(os.args); i +=1{
     arg, ok := get_arg(os.args[i])
     if ok {
       error = nil
