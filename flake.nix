@@ -16,16 +16,12 @@
           pname = "banj-cli";
           version = "0.0.0";
           src = ./.;
+          doCheck=true;
           inherit buildInputs;
-
-          buildPhase = ''
-            odin build . -out:banj
-          '';
           installPhase = ''
-            mkdir -p $out/bin
-            cp banj $out/bin/banj && chmod +x $out/bin/banj
+          mkdir -p $out/bin
+          mv banj $out/bin
           '';
-
         };
       });
 }
