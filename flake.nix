@@ -19,11 +19,11 @@
           inherit buildInputs;
 
           buildPhase = ''
-            odin build .
+            odin build . -out:banj
           '';
           installPhase = ''
             mkdir -p $out/bin
-            mv banj-cli $out/bin/banj && chmod +x $out/bin/banj
+            cp banj $out/bin/banj && chmod +x $out/bin/banj
           '';
 
         };
