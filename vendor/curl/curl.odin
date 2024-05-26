@@ -80,6 +80,7 @@ encode_headers :: proc(headers: any, ctx: mem.Allocator) -> ^slist {
     false, //quote key names
     false, //use_equals when MJSON
     false, //sort by key
+    false,
     // Internal state
     0,
     false,
