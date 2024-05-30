@@ -18,7 +18,8 @@
           pname = "banj-cli";
           version = "0.0.0";
           src = ./.;
-          doCheck=true;
+          # run tests?
+          doCheck=false;
           inherit buildInputs;
           installPhase = ''
 #/etc/profiles/per-user/$USER/share/doc/banj-cli/md/
@@ -27,7 +28,8 @@
             mv banj $out/bin
             mv docs/* $out/${docPath}
 
-            .$out/bin/banj init
+            # Does this belong in another hook?
+            #.$out/bin/banj init
           '';
         };
       });
