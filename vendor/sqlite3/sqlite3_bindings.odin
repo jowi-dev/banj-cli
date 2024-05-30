@@ -5,7 +5,7 @@ import "core:c/libc"
 
 when ODIN_OS == .Windows {
     foreign import sqlite3 "bin/sqlite3.lib"
-} else when ODIN_OS ==.Linux {
+} else when ODIN_OS ==.Linux || ODIN_OS == .Darwin{
     foreign import sqlite3 {
         "system:sqlite3",
         "system:pthread",
