@@ -27,7 +27,7 @@
             mv banj $out/bin
             mv docs/* $out/${docPath}
 
-            ./$out/bin/banj init
+            .$out/bin/banj init
           '';
         };
       });

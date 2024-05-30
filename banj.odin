@@ -61,6 +61,7 @@ main :: proc() {
       case "init":
         db_name := os.get_env("BANJ_DB")
         // useful to setup DB tables
+        if os.exists(db_name) do return
         db : ^sqlite.Sqlite3 = sqlite.connect_db(db_name, context.temp_allocator)
         defer free_all(context.temp_allocator)
         sqlite.create_table(ai.CREATE_STATEMENT, db)
