@@ -38,26 +38,30 @@ main :: proc() {
   else {
     switch args[0] {
       case "tune", "rebuild":
+        // This will eventually need docs on profile switching
         cmd = banjos.rebuild(cast_os()) or_else help.print(.Rebuild)
       case "sleep":
-        cmd = banjos.sleep(cast_os()) or_else help.print(.Sleep)
+        cmd, _ = banjos.sleep(cast_os()) 
       case "monitor":
-        cmd = banjos.monitor(cast_os(), &args[1]) or_else help.print(.Banj) // needs to be monitor
+        cmd = banjos.monitor(cast_os(), &args[1]) or_else help.print(.Monitor) // needs to be monitor
       case "display":
-        cmd = banjos.display(cast_os(), &args[1]) or_else help.print(.Banj) // needs to be display
+        cmd = banjos.display(cast_os(), &args[1]) or_else help.print(.Display) // needs to be display
       case "ai":
-        cmd = ai.prompt(cast_os(), &args[1]) or_else help.print(.AI)
+        db_name := os.get_env("BANJ_DB")
+        cmd = ai.prompt(cast_os(), &args[1], db_name) or_else help.print(.AI)
       case "dbg":
         // this command is mostly for creating new commands or testing out functionality for easy integration
         ai.print_logs(context.temp_allocator)
       case "query":
+        db_name := os.get_env("BANJ_DB")
         // useful for ad-hoc querying of our local db
-        db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
+        db : ^sqlite.Sqlite3 = sqlite.connect_db(db_name, context.temp_allocator)
         sqlite.query(args[1], db, context.temp_allocator)
         defer free_all(context.temp_allocator)
       case "init":
+        db_name := os.get_env("BANJ_DB")
         // useful to setup DB tables
-        db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
+        db : ^sqlite.Sqlite3 = sqlite.connect_db(db_name, context.temp_allocator)
         defer free_all(context.temp_allocator)
         sqlite.create_table(ai.CREATE_STATEMENT, db)
       case: 

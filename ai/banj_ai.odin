@@ -58,9 +58,8 @@ CREATE_STATEMENT : cstring : `
   `
 
 
-prompt :: proc(OS: banjos.SupportedOS, prompt: ^string) -> (cmd:cstring = "", ok:bool = true) {
-
-  db : ^sqlite.Sqlite3 = sqlite.connect_db(context.temp_allocator)
+prompt :: proc(OS: banjos.SupportedOS, prompt: ^string, db_name: string) -> (cmd:cstring = "", ok:bool = true) {
+  db : ^sqlite.Sqlite3 = sqlite.connect_db(db_name, context.temp_allocator)
   defer free_all(context.temp_allocator)
   sqlite.create_table(CREATE_STATEMENT, db)
 
@@ -102,7 +101,8 @@ print_logs :: proc(allocator: mem.Allocator) {
   statement := sqlite.Statement(Interaction, ^Interaction){}
   statement.connection = db
 
-  sqlite.all(statement, allocator)
+  db_name := os.get_env("BANJ_DB")
+  sqlite.all(db_name, statement, allocator)
 }
 
 

@@ -2,6 +2,7 @@ package banj_os
 
 import "core:fmt"
 import "core:c/libc"
+import coreos "core:os"
 import "base:runtime"
 
 SupportedOS :: enum {
@@ -30,6 +31,7 @@ sleep :: proc(os: SupportedOS) -> (cmd:cstring = "", ok:bool = true){
       return "systemctl hibernate", true
     case: 
       fmt.println("Command not supported on current system")
+      coreos.exit(1)
   }
   return cmd, !ok
 }

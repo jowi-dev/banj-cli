@@ -10,8 +10,6 @@ import "base:runtime"
 
 write :: strings.write_string
 
-DB_FILE :: "dev.db"
-
 Statement :: struct($Record, $Output: typeid) {
   connection: ^Sqlite3,
   record: Record,
@@ -20,15 +18,15 @@ Statement :: struct($Record, $Output: typeid) {
   error: ^cstring
 }
 
-connect_db :: proc(allocator: mem.Allocator) -> (db : ^Sqlite3) {
+connect_db :: proc(database_name: string, allocator: mem.Allocator) -> (db : ^Sqlite3) {
   db = new(Sqlite3, allocator)
   
   flag : c.int = 2
   db_file : cstring
-  db_file, _ = strings.clone_to_cstring(DB_FILE, allocator)
+  db_file, _ = strings.clone_to_cstring(database_name, allocator)
   status := open(db_file, &db)
   if status != nil {
-    fmt.eprintf("Error | connect_db/1 | '%s'(%v): %s", DB_FILE, status, errstr(status))
+    fmt.eprintf("Error | connect_db/1 | '%s'(%v): %s", database_name, status, errstr(status))
     os.exit(1)
   }
 
@@ -45,7 +43,7 @@ create_table :: proc(statement:cstring, db: ^Sqlite3) {
   status := exec(db, statement, nil, create_ptr, create_err)
 
   if status != nil {
-    fmt.eprintf("Error: %s | create_table/2 | '%s'(%v): %s ", create_err, DB_FILE, status, errstr(status))
+    fmt.eprintf("Error: %s | create_table/2 | (%v): %s ", create_err, status, errstr(status))
     os.exit(1)
   }
 }
@@ -89,7 +87,7 @@ insert_record :: proc(statement: Statement($I, $O), allocator: mem.Allocator) {
   statement.status = exec(statement.connection, c_stmt, print_results, &statement.output, statement.error)
 
   if statement.status != nil {
-    fmt.eprintf("Error: %s | insert_record/2 | '%s'(%v): %s", statement.error, DB_FILE, statement.status, errstr(statement.status))
+    fmt.eprintf("Error: %s | insert_record/2 | (%v): %s", statement.error, statement.status, errstr(statement.status))
     os.exit(1)
   }
 
@@ -102,7 +100,7 @@ query :: proc(sql : string, db: ^Sqlite3, allocator: mem.Allocator){
   fmt.println(c_sql)
   status := exec(db, c_sql, print_results, ctx, err)
   if status != nil {
-    fmt.eprintf("Error: %s | insert_record/2 | '%s'(%v): %s", err, DB_FILE, status, errstr(status))
+    fmt.eprintf("Error: %s | insert_record/2 | (%v): %s", err,  status, errstr(status))
     os.exit(1)
   }
 }
@@ -111,11 +109,11 @@ update :: proc() {}
 
 get :: proc() {}
 
-all :: proc(statement: Statement($R, $O), allocator: mem.Allocator) {
+all :: proc(db_name: string, statement: Statement($R, $O), allocator: mem.Allocator) {
   fmt.println("starting read row function")
   //shadow the param
   statement := statement
-  if statement.connection == nil do statement.connection = connect_db(allocator)
+  if statement.connection == nil do statement.connection = connect_db(db_name, allocator)
 
   record_type := typeid_of(type_of(statement.record))
   info := type_info_of(record_type)
@@ -131,7 +129,7 @@ all :: proc(statement: Statement($R, $O), allocator: mem.Allocator) {
   statement.status = exec(statement.connection, strings.clone_to_cstring(sql), print_results, statement.output, statement.error)
 
   if statement.status != nil {
-    fmt.eprintf("Error: %s | read_rows/2 | '%s'(%v): %s", statement.error, DB_FILE, statement.status, errstr(statement.status))
+    fmt.eprintf("Error: %s | read_rows/2 | (%v): %s", statement.error, statement.status, errstr(statement.status))
     os.exit(1)
   }
   

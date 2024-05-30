@@ -7,6 +7,8 @@ Context :: enum {
   Banj,
   Rebuild,
   Sleep,
+  Monitor,
+  Display,
   AI
 }
 
@@ -14,7 +16,7 @@ Context :: enum {
 print :: proc(cont: Context) -> cstring{
   cmd_bldr := strings.builder_make()
   // TODO - this should not be hardcoded
-  strings.write_string(&cmd_bldr, "bat $BANJ_CLI_DIR/docs/")
+  strings.write_string(&cmd_bldr, "bat /etc/profiles/per-user/$USER/share/doc/banj-cli/md/")
   strings.write_string(&cmd_bldr, get_help(cont))
   strings.write_string(&cmd_bldr, " --style=plain -f --theme=Dracula")
 
@@ -31,6 +33,10 @@ get_help :: proc(cont: Context) -> string {
       return "rebuild.md"
     case .Sleep:
       return "sleep.md"
+    case .Monitor:
+      return "monitor.md"
+    case .Display:
+      return "display.md"
     case .AI: 
       return "ai.md"
     case: 

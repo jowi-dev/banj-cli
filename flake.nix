@@ -7,7 +7,9 @@
     flake-utils.lib.eachDefaultSystem (system:
     let 
       pkgs = import nixpkgs { inherit system; }; 
-      buildInputs = with pkgs; [odin openssl sqlite curl];
+      additionalInputs = if system == "x86_64-linux" then [pkgs.btop pkgs.wavemon] else [];
+      buildInputs = with pkgs; [odin openssl sqlite curl] ++ additionalInputs;
+      docPath = "doc/banj-cli/md";
     in {
         devShells.default = pkgs.mkShell {
           buildInputs = buildInputs ++  [ pkgs.valgrind ];
@@ -19,8 +21,13 @@
           doCheck=true;
           inherit buildInputs;
           installPhase = ''
-          mkdir -p $out/bin
-          mv banj $out/bin
+#/etc/profiles/per-user/$USER/share/doc/banj-cli/md/
+            mkdir -p $out/bin
+            mkdir -p $out/${docPath}
+            mv banj $out/bin
+            mv docs/* $out/${docPath}
+
+            ./$out/bin/banj init
           '';
         };
       });

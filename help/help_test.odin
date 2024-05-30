@@ -6,6 +6,5 @@ import "core:testing"
 outputs_path_to_md_file :: proc(_: ^testing.T) {
   cmd :string = auto_cast print(.Banj)
 
-  assert(cmd == "bat $BANJ_CLI_DIR/docs/help.md --style=plain -f --theme=Dracula")
+  assert(cmd == "bat /etc/profiles/per-user/$USER/share/doc/banj-cli/md/help.md --style=plain -f --theme=Dracula")
 }
-
