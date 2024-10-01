@@ -22,7 +22,7 @@
           doCheck=false;
           inherit buildInputs;
           installPhase = ''
-#/etc/profiles/per-user/$USER/share/doc/banj-cli/md/
+            #/etc/profiles/per-user/$USER/share/doc/banj-cli/md/
             mkdir -p $out/bin
             mkdir -p $out/${docPath}
             mv banj $out/bin
