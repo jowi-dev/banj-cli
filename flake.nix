@@ -12,7 +12,7 @@
       docPath = "doc/banj-cli/md";
     in {
         devShells.default = pkgs.mkShell {
-          buildInputs = buildInputs ++  [ pkgs.valgrind ];
+          buildInputs = buildInputs; 
         };
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "banj-cli";

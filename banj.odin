@@ -69,7 +69,7 @@ main :: proc() {
     }
   }
   if cmd != `` {
-    status := libc.system(cmd)
+    libc.system(cmd)
   }
   return 
 }
