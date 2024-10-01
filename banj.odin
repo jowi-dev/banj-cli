@@ -32,7 +32,6 @@ main :: proc() {
   args, error := process_args()
   defer delete(args)
 
-  fmt.println(args)
   cmd:cstring = ``
   if error != nil || len(os.args) == 1 do cmd = help.print(.Banj)
   else {
@@ -71,7 +70,6 @@ main :: proc() {
   }
   if cmd != `` {
     status := libc.system(cmd)
-    fmt.println(status)
   }
   return 
 }
