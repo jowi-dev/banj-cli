@@ -37,7 +37,7 @@
       ];
       
       # Platform-specific compiler settings
-      stdenv = if system == "x86_64-darwin" then
+      stdenv = if system == "aarch-darwin" then
         pkgs.darwin.apple_sdk.stdenv
       else
         pkgs.stdenv;
@@ -52,7 +52,7 @@
         shellHook = ''
           export CPATH=${pkgs.catch2_3}/include:$CPATH
           export LIBRARY_PATH=${pkgs.catch2_3}/lib:$LIBRARY_PATH
-          ${if system == "x86_64-darwin" then ''
+          ${if system == "aarch-darwin" then ''
             export SDKROOT=${pkgs.darwin.apple_sdk.sdk}
           '' else ""}
         '';
@@ -82,7 +82,7 @@
           "-DCMAKE_BUILD_TYPE=Release"
           "-DBUILD_TESTING=ON"
           "-DUSE_CATCH2=ON"
-        ] ++ (if system == "x86_64-darwin" then [
+        ] ++ (if system == "aarch-darwin" then [
           "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15"
         ] else []);
         
