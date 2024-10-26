@@ -11,6 +11,8 @@
 - `banj sleep` - put the computer in a low power mode
 - `banj monitor` - commands related to various process monitoring. `banj monitor` will display more information
 - `banj display` - commands for dealing with physical outputs. `banj display` will show further options.
+- `banj project` - project related commands. `banj project` will display more help
+- `banj gc | banj gc-all` - commands for managing nix store size
 - `banj ai` - commands for prompting the LLM dejour
 - `banj query` - commands for viewing local db records. Performs a sql query as entered. e.g. `banj query "select * from interactions"`
 

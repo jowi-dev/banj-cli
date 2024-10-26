@@ -43,8 +43,9 @@ main :: proc() {
       case "sleep":
         cmd, _ = banjos.sleep(cast_os()) 
       case "gc":
-        use_all := args[1] == "all"
-        cmd = banjos.gc(cast_os(), use_all) or_else help.print(.GC)
+        cmd = banjos.gc(cast_os()) or_else help.print(.GC)
+      case "gc-all":
+        cmd = banjos.gc(cast_os(), true) or_else help.print(.GC)
       case "monitor":
         cmd = banjos.monitor(cast_os(), &args[1]) or_else help.print(.Monitor) // needs to be monitor
       case "display":
