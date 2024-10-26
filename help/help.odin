@@ -9,6 +9,8 @@ Context :: enum {
   Sleep,
   Monitor,
   Display,
+  Project,
+  GC,
   AI
 }
 
@@ -37,6 +39,10 @@ get_help :: proc(cont: Context) -> string {
       return "monitor.md"
     case .Display:
       return "display.md"
+    case .Project:
+      return "project.md"
+    case .GC:
+      return "gc.md"
     case .AI: 
       return "ai.md"
     case: 

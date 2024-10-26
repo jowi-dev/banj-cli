@@ -36,3 +36,9 @@ sleep :: proc(os: SupportedOS) -> (cmd:cstring = "", ok:bool = true){
   return cmd, !ok
 }
 
+gc :: proc(os: SupportedOS, all: bool) -> (cmd:cstring, ok:bool){
+  if all {
+    return "sudo nix-collect-garbage -d && sudo nix-store --gc && sudo nix-store --optimise", true
+  }
+  return "nix-collect-garbage", true
+}

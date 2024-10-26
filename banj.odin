@@ -8,6 +8,7 @@ import "core:strings"
 
 import banjos "os"
 import ai "ai"
+import project "project"
 import help "help"
 
 import sqlite "vendor/sqlite3"
@@ -41,10 +42,14 @@ main :: proc() {
         cmd = banjos.rebuild(cast_os()) or_else help.print(.Rebuild)
       case "sleep":
         cmd, _ = banjos.sleep(cast_os()) 
+      case "gc":
+        cmd, _ = banjos.gc(cast_os(), &args[1] == "all") or_else help.print(.GC)
       case "monitor":
         cmd = banjos.monitor(cast_os(), &args[1]) or_else help.print(.Monitor) // needs to be monitor
       case "display":
         cmd = banjos.display(cast_os(), &args[1]) or_else help.print(.Display) // needs to be display
+      case "project":
+        cmd = project.handler(&args[1]) or_else help.print(.Project)
       case "ai":
         db_name := os.get_env("BANJ_DB")
         cmd = ai.prompt(cast_os(), &args[1], db_name) or_else help.print(.AI)
